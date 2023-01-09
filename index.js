@@ -20,10 +20,10 @@ function verifyJWT(req, res, next) {
     //console.log(req.headers.authorization)
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-        return res.status(401).send('unauthorized')
+        return res.status(401).send('not found')
     }
     const token = authHeader.split(' ')[1];
-    jwt.verify(token, process.env.ACCESS_TOKEN, function (error, decoded) {
+    jwt.verify(token, process.env.USER_TOKEN, function (error, decoded) {
         if (error) {
             res.status(403).send({ message: 'forbidden access' })
         }
@@ -42,9 +42,9 @@ async function run() {
         const verifyAdmin = async (req, res, next) => {
             const decodedEmail = req.decoded.email;
             const query = { email: decodedEmail };
-            const seller = await sellersCollection.findOne(query);
+            const admin = await usersCollection.findOne(query);
 
-            if (seller?.role !== 'admin') {
+            if (admin?.role !== 'admin') {
                 return res.status(403).send({ message: 'forbidden access' })
             }
             next();
@@ -53,13 +53,12 @@ async function run() {
         app.get('/jwt', async (req, res) => {
             const email = req.query.email;
             const query = { email: email }
-            const registeredseller = await sellersCollection.findOne(query);
-            if (registeredseller) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
+            const registeredUser = await usersCollection.findOne(query);
+            if (registeredUser) {
+                const token = jwt.sign({ email }, process.env.USER_TOKEN, { expiresIn: '1h' })
                 return res.send({ accessToken: token })
             }
-            //console.log(registeredseller)
-            res.send({ accessToken: 'unathorized' })
+            res.send({ accessToken: 'Token not Found' })
         })
 
         app.get('/category/:brand', async (req, res) => {
@@ -121,6 +120,19 @@ async function run() {
             else {
                 res.send({ isAdmin: false })
             }
+        })
+
+        app.get('/products', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            console.log("email ", email)
+            const query = { email: email }
+            const decodedEmail = req.decoded.email;
+            //console.log(decodedEmail)
+            if (email !== decodedEmail) {
+                res.status(403).send({ message: 'forbidden' })
+            }
+            const products = await phonesCollection.find(query).toArray();
+            res.send(products);
         })
         // app.put('/sellers/admin:id', verifyJWT, verifyAdmin, async (req, res) => {
         //     const id = req.params.id;
