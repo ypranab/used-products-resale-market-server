@@ -38,6 +38,7 @@ async function run() {
         const sellersCollection = client.db('phoneResaleDB').collection('sellers');
         const buyersCollection = client.db('phoneResaleDB').collection('buyers');
         const usersCollection = client.db('phoneResaleDB').collection('users');
+        const bookingCollection = client.db('phoneResaleDB').collection('bookings');
 
         const verifyAdmin = async (req, res, next) => {
             const decodedEmail = req.decoded.email;
@@ -127,12 +128,35 @@ async function run() {
             console.log("email ", email)
             const query = { email: email }
             const decodedEmail = req.decoded.email;
-            //console.log(decodedEmail)
             if (email !== decodedEmail) {
                 res.status(403).send({ message: 'forbidden' })
             }
             const products = await phonesCollection.find(query).toArray();
             res.send(products);
+        })
+
+        app.post('/bookings', async (req, res) => {
+            const booking = req.body;
+            const query = {
+                email: booking.email,
+            }
+            const emailBooked = await bookingCollection.find(query).toArray();
+            //console.log(emailBooked)
+
+            const result = await bookingCollection.insertOne(booking);
+            res.send(result)
+        })
+
+        app.get('/bookings', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email }
+            const decodedEmail = req.decoded.email;
+            //console.log(decodedEmail)
+            if (email !== decodedEmail) {
+                res.status(403).send({ message: 'forbidden' })
+            }
+            const bookings = await bookingCollection.find(query).toArray();
+            res.send(bookings);
         })
         // app.put('/sellers/admin:id', verifyJWT, verifyAdmin, async (req, res) => {
         //     const id = req.params.id;
