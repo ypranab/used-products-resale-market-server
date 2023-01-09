@@ -35,8 +35,6 @@ function verifyJWT(req, res, next) {
 async function run() {
     try {
         const phonesCollection = client.db('phoneResaleDB').collection('phones');
-        const sellersCollection = client.db('phoneResaleDB').collection('sellers');
-        const buyersCollection = client.db('phoneResaleDB').collection('buyers');
         const usersCollection = client.db('phoneResaleDB').collection('users');
         const bookingCollection = client.db('phoneResaleDB').collection('bookings');
 
@@ -173,15 +171,16 @@ async function run() {
             const result = await usersCollection.deleteOne(filter)
             res.send(result)
         })
-        // app.put('/sellers/admin:id', verifyJWT, verifyAdmin, async (req, res) => {
-        //     const id = req.params.id;
-        //     const filter = { _id: ObjectId(id) }
-        //     const options = { upsert: true }
-        //     const updatedDoc = { $set: { role: 'admin' } }
-        //     const result = await sellersCollection.updateOne(filter, updatedDoc, options);
-        //     res.send(result)
 
-        // })
+        app.put('/users/verify:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true }
+            const updatedDoc = { $set: { verify: 'verified' } }
+            const result = await usersCollection.updateOne(filter, updatedDoc, options);
+            res.send(result)
+
+        })
     }
     finally {
 
