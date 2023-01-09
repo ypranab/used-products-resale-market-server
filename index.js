@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000;
 const app = express();
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 app.use(express.json())
 app.use(cors())
@@ -17,7 +17,7 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 function verifyJWT(req, res, next) {
-    //console.log(req.headers.authorization)
+    console.log(req.headers.authorization)
     const authHeader = req.headers.authorization;
     if (!authHeader) {
         return res.status(401).send('not found')
@@ -128,6 +128,7 @@ async function run() {
             console.log("email ", email)
             const query = { email: email }
             const decodedEmail = req.decoded.email;
+            console.log("decoded email ", decodedEmail)
             if (email !== decodedEmail) {
                 res.status(403).send({ message: 'forbidden' })
             }
@@ -157,6 +158,20 @@ async function run() {
             }
             const bookings = await bookingCollection.find(query).toArray();
             res.send(bookings);
+        })
+
+        app.delete('/seller/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id
+            const filter = { _id: ObjectId(id) }
+            const result = await usersCollection.deleteOne(filter)
+            res.send(result)
+        })
+
+        app.delete('/buyer/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id
+            const filter = { _id: ObjectId(id) }
+            const result = await usersCollection.deleteOne(filter)
+            res.send(result)
         })
         // app.put('/sellers/admin:id', verifyJWT, verifyAdmin, async (req, res) => {
         //     const id = req.params.id;
