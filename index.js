@@ -17,10 +17,10 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 function verifyJWT(req, res, next) {
-    console.log(req.headers.authorization)
+    //console.log(req.headers.authorization)
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-        return res.status(401).send('not found')
+        return res.status(401).send('unauthorized')
     }
     const token = authHeader.split(' ')[1];
     jwt.verify(token, process.env.USER_TOKEN, function (error, decoded) {
@@ -123,10 +123,10 @@ async function run() {
 
         app.get('/products', verifyJWT, async (req, res) => {
             const email = req.query.email;
-            console.log("email ", email)
+            //console.log("email ", email)
             const query = { email: email }
             const decodedEmail = req.decoded.email;
-            console.log("decoded email ", decodedEmail)
+            //console.log("decoded email ", decodedEmail)
             if (email !== decodedEmail) {
                 res.status(403).send({ message: 'forbidden' })
             }
@@ -165,6 +165,13 @@ async function run() {
             res.send(result)
         })
 
+        app.delete('/products/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id
+            const filter = { _id: ObjectId(id) }
+            const result = await phonesCollection.deleteOne(filter)
+            res.send(result)
+        })
+
         app.delete('/buyer/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id
             const filter = { _id: ObjectId(id) }
@@ -179,8 +186,8 @@ async function run() {
             const updatedDoc = { $set: { verify: 'verified' } }
             const result = await usersCollection.updateOne(filter, updatedDoc, options);
             res.send(result)
-
         })
+
     }
     finally {
 
