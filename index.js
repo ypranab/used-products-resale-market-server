@@ -158,11 +158,18 @@ async function run() {
             res.send(bookings);
         })
 
+        app.get('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await bookingCollection.findOne(query);
+            res.send(result);
+        })
+
         app.delete('/seller/:id', verifyJWT, verifyAdmin, async (req, res) => {
-            const id = req.params.id
-            const filter = { _id: ObjectId(id) }
-            const result = await usersCollection.deleteOne(filter)
-            res.send(result)
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await usersCollection.deleteOne(filter);
+            res.send(result);
         })
 
         app.delete('/products/:id', verifyJWT, async (req, res) => {
@@ -179,12 +186,25 @@ async function run() {
             res.send(result)
         })
 
-        app.put('/users/verify:id', verifyJWT, verifyAdmin, async (req, res) => {
+        app.put('/users/verify:id/:email', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
+            const email = req.params.email;
             const filter = { _id: ObjectId(id) }
+            const filterPhone = { email: email }
+            //console.log(id, email);
             const options = { upsert: true }
             const updatedDoc = { $set: { verify: 'verified' } }
             const result = await usersCollection.updateOne(filter, updatedDoc, options);
+            const phones = await phonesCollection.updateMany(filterPhone, updatedDoc, options);
+            res.send({ result, phones });
+        })
+
+        app.put('/phones/paid:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true }
+            const updatedDoc = { $set: { pais: 'paid' } }
+            const result = await phonesCollection.updateOne(filter, updatedDoc, options);
             res.send(result)
         })
 
