@@ -38,6 +38,7 @@ async function run() {
         const phonesCollection = client.db('phoneResaleDB').collection('phones');
         const usersCollection = client.db('phoneResaleDB').collection('users');
         const bookingCollection = client.db('phoneResaleDB').collection('bookings');
+        const paymentCollection = client.db('phoneResaleDB').collection('payments');
 
         const verifyAdmin = async (req, res, next) => {
             const decodedEmail = req.decoded.email;
@@ -217,12 +218,19 @@ async function run() {
             });
         })
 
-        app.put('/phones/paid:id', verifyJWT, async (req, res) => {
-            const id = req.params.id;
+        app.post('/payment', verifyJWT, async (req, res) => {
+            const payment = req.body;
+            const result = await paymentCollection.insertOne(payment);
+
+            const id = payment.bookingId;
             const filter = { _id: ObjectId(id) }
             const options = { upsert: true }
             const updatedDoc = { $set: { paid: 'paid' } }
-            const result = await phonesCollection.updateOne(filter, updatedDoc, options);
+            const paidBookings = await bookingCollection.updateOne(filter, updatedDoc, options);
+
+            const filterPhoneId = { _id: ObjectId(payment.phoneId) }
+            const updatedDocPhone = { $set: { status: 'sold' } }
+            const updatedPhoneCollection = await phonesCollection.updateOne(filterPhoneId, updatedDocPhone, options);
             res.send(result)
         })
 
